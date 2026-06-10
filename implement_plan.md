@@ -205,7 +205,7 @@
   - [x] Tài khoản demo
 - [x] Review code: xóa debug code, thêm comment cho logic phức tạp
 - [x] Final commit: `chore: production ready`
-- [ ] Push lên GitHub public repo
+- [x] Push lên GitHub public repo
 
 ## Stage 15 — Final Verification
 
@@ -234,5 +234,5 @@
 | 11 | Purchase Flow UI | ✅ |
 | 12 | Admin Panel | ✅ |
 | 13 | Docker & DevOps | ✅ |
-| 14 | Docs & Final Polish | 🚫 |
+| 14 | Docs & Final Polish | ✅ |
 | 15 | Final Verification | ✅ |
