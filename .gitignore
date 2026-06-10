@@ -1,0 +1,54 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+credentials*.json
+secrets*.json
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+.uv-cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# Node and frontend build output
+node_modules/
+.npm-cache/
+dist/
+coverage/
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+
+# IDE and operating system
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Runtime data, logs and local artifacts
+*.log
+logs/
+tmp/
+temp/
+*.sqlite
+*.sqlite3
+*.db
+TEST ASSIGNEMENT.pdf
