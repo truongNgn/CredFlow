@@ -1,75 +1,339 @@
 # CredFlow
 
-CredFlow is a full-stack SaaS credit management demo. Users can register, purchase credit packages, unlock product features, inspect transaction history, and manage packages through an admin panel.
+> A production-ready SaaS credit management platform — buy credit packages, unlock features, and track spend. Built as a full-stack reference implementation with FastAPI, React, and PostgreSQL.
 
-## Stack
+---
 
-- FastAPI, SQLAlchemy async, Alembic, PostgreSQL 16
-- React 18, TypeScript, Vite, Zustand, Tailwind CSS
-- Docker Compose, Nginx
+## Features
 
-## Run with Docker
+| Area | What it does |
+|---|---|
+| **Auth** | JWT-based register / login with role separation (user / admin) |
+| **Packages** | Public listing of credit tiers; admin CRUD with feature assignment |
+| **Purchase flow** | Simulated payment → atomic credit top-up + feature unlock in one DB transaction |
+| **Dashboard** | Live credit balance, unlocked features, spend summary |
+| **Transactions** | Paginated history with status badges and filter |
+| **Feature guard** | Middleware dependency that blocks endpoints unless the user has the required feature unlocked |
+| **Admin panel** | Package management, stats (users, transactions, revenue) |
 
-```powershell
-Copy-Item .env.example .env
-docker compose up --build
-Start-Process http://localhost:3000
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Browser  (React 18 + TypeScript + Vite)            │
+│  Zustand state · Axios JWT interceptor · shadcn/ui  │
+└─────────────────────────┬───────────────────────────┘
+                          │ HTTP / JSON
+┌─────────────────────────▼───────────────────────────┐
+│  FastAPI 0.111  (Python 3.11)                       │
+│  Router → Service → SQLAlchemy 2.0 async ORM        │
+│  Alembic migrations · python-jose JWT · bcrypt      │
+└─────────────────────────┬───────────────────────────┘
+                          │ asyncpg
+┌─────────────────────────▼───────────────────────────┐
+│  PostgreSQL 16                                       │
+└─────────────────────────────────────────────────────┘
 ```
 
-The default `docker-compose.override.yml` enables backend and frontend hot reload. For production-style containers:
+In production the frontend is served as a static build behind **Nginx**, which also reverse-proxies `/api` to the backend — so the browser talks to one origin only.
 
-```powershell
+---
+
+## Tech Stack
+
+**Backend**
+
+| Package | Role |
+|---|---|
+| FastAPI | Async web framework |
+| SQLAlchemy 2.0 (asyncio) | ORM |
+| asyncpg | PostgreSQL async driver |
+| Alembic | Schema migrations |
+| python-jose | JWT sign / verify |
+| passlib (bcrypt) | Password hashing |
+| pydantic-settings | Typed `.env` config |
+
+**Frontend**
+
+| Package | Role |
+|---|---|
+| React 18 + TypeScript | UI |
+| Vite | Build tool + dev server |
+| React Router v6 | Client-side routing |
+| Zustand | Global state (auth, credits) |
+| Axios | HTTP client with JWT interceptor |
+| Tailwind CSS | Utility-first styling |
+| shadcn/ui | Accessible component primitives |
+| react-hot-toast | Toast notifications |
+
+**Infrastructure**
+
+| Tool | Role |
+|---|---|
+| PostgreSQL 16 | Primary datastore |
+| Docker Compose | Orchestration |
+| Nginx (alpine) | Static file server + reverse proxy |
+
+---
+
+## Quick Start (Docker)
+
+Requirements: Docker Desktop ≥ 24 with Compose v2.
+
+```bash
+# 1 — Copy env file and fill in secrets
+cp .env.example .env
+
+# 2 — Build and start all services (postgres + backend + frontend)
+docker compose up --build
+
+# 3 — Open in browser
+open http://localhost:3000        # macOS / Linux
+start http://localhost:3000       # Windows
+```
+
+The backend auto-runs `alembic upgrade head` and seeds demo data on first start.
+
+**Production-mode** (no volume mounts, no hot reload):
+
+```bash
 docker compose -f docker-compose.yml up --build
 ```
 
-## Local development
+---
 
-Backend:
+## Local Development
 
-```powershell
+### Backend
+
+```bash
 cd backend
+
+# Create and activate virtualenv
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+source .venv/bin/activate          # Linux / macOS
+.\.venv\Scripts\Activate.ps1       # Windows PowerShell
+
+# Install dependencies
 pip install -r requirements.txt
-Copy-Item .env.example .env
+
+# Configure environment
+cp .env.example .env
+# Edit .env — set DATABASE_URL to a local PostgreSQL instance
+
+# Run migrations + seed
 alembic upgrade head
+
+# Start dev server (hot reload)
 uvicorn app.main:app --reload
 ```
 
-Frontend:
+API available at `http://localhost:8000`  
+Swagger UI: `http://localhost:8000/docs`
 
-```powershell
+### Frontend
+
+```bash
 cd frontend
+
 npm ci
-Copy-Item .env.example .env
+cp .env.example .env               # VITE_API_URL=http://localhost:8000/api
 npm run dev
 ```
 
-Open `http://localhost:5173`. Swagger is available at `http://localhost:8000/docs`.
+App available at `http://localhost:5173`
 
-## Main API
+---
 
-| Area | Endpoints |
-|---|---|
-| Auth | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` |
-| Packages | `GET /api/packages`, `GET /api/packages/{id}` |
-| Credits | `POST /api/credits/purchase`, balance, transactions, unlocked features |
-| Admin | package CRUD, feature catalog and aggregate stats under `/api/admin/*` |
-
-## Demo accounts
+## Demo Accounts
 
 | Role | Email | Password |
 |---|---|---|
 | Admin | `admin@credflow.dev` | `Admin@123` |
 | User | `user@credflow.dev` | `User@123` |
 
-## Verification
+---
 
-```powershell
-cd backend
-pytest -q -p no:cacheprovider
+## API Reference
 
-cd ..\frontend
-npm run build
-npm run lint
+Base URL: `http://localhost:8000`  
+Interactive docs: `/docs` (Swagger UI), `/redoc`
+
+### Authentication — `/api/auth`
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/auth/register` | Public | Create account, returns JWT |
+| POST | `/api/auth/login` | Public | Authenticate, returns JWT |
+| GET | `/api/auth/me` | Bearer | Current user profile |
+
+### Packages — `/api/packages`
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/api/packages` | Public | List active packages |
+| GET | `/api/packages/{id}` | Public | Package detail |
+
+### Credits — `/api/credits`
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/credits/purchase` | Bearer | Buy a package (simulated payment) |
+| GET | `/api/credits/balance` | Bearer | Current credit balance |
+| GET | `/api/credits/transactions` | Bearer | Paginated transaction history |
+| GET | `/api/credits/features` | Bearer | Unlocked features |
+
+### Admin — `/api/admin`
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/api/admin/packages` | Admin | All packages (incl. inactive) |
+| POST | `/api/admin/packages` | Admin | Create package |
+| PUT | `/api/admin/packages/{id}` | Admin | Update package |
+| DELETE | `/api/admin/packages/{id}` | Admin | Delete package |
+| GET | `/api/admin/features` | Admin | Feature catalog |
+| GET | `/api/admin/stats` | Admin | Users, transactions, revenue |
+
+### Protected Feature Endpoints (demo)
+
+| Method | Endpoint | Required Feature |
+|---|---|---|
+| POST | `/api/features/generate-image` | `image_generation` |
+| POST | `/api/features/auto-post` | `auto_post` |
+| GET | `/api/features/analytics` | `analytics` |
+
+---
+
+## Database Schema
+
 ```
+users                      packages
+├── id (PK, UUID)          ├── id (PK, UUID)
+├── email (unique)         ├── name
+├── password_hash          ├── description
+├── role                   ├── price
+├── created_at             ├── credit_amount
+└── updated_at             ├── is_active
+                           ├── created_at
+                           └── updated_at
+
+features                   package_features (pivot)
+├── id (PK, UUID)          ├── package_id (FK)
+├── name                   └── feature_id (FK)
+├── slug (unique)
+└── description            user_features (pivot)
+                           ├── user_id (FK)
+user_credits               ├── feature_id (FK)
+├── id (PK, UUID)          └── unlocked_at
+├── user_id (unique FK)
+└── balance                transactions
+                           ├── id (PK, UUID)
+                           ├── user_id (FK)
+                           ├── package_id (FK)
+                           ├── amount
+                           ├── credits_added
+                           ├── status (pending|success|failed)
+                           └── created_at
+```
+
+---
+
+## Seed Data
+
+### Packages
+
+| Name | Price | Credits | Included Features |
+|---|---|---|---|
+| Basic | $9/mo | 100 | basic_api |
+| Pro | $29/mo | 500 | basic_api, image_generation, analytics |
+| Enterprise | $99/mo | 2,000 | basic_api, image_generation, analytics, auto_post, priority_support |
+
+### Feature Slugs
+
+`basic_api` · `image_generation` · `analytics` · `auto_post` · `priority_support`
+
+---
+
+## Running Tests
+
+```bash
+cd backend
+
+# Requires a running PostgreSQL instance (or use docker compose for postgres only)
+pytest -q
+
+# Type-check + lint frontend
+cd ../frontend
+npm run build      # TypeScript compile
+npm run lint       # ESLint
+```
+
+---
+
+## Project Structure
+
+```
+credflow/
+├── backend/
+│   ├── app/
+│   │   ├── main.py            # FastAPI entry point, CORS, error handlers
+│   │   ├── config.py          # Pydantic-settings env config
+│   │   ├── database.py        # Async SQLAlchemy engine + session factory
+│   │   ├── dependencies.py    # get_db, get_current_user, require_admin
+│   │   ├── models/            # SQLAlchemy ORM models
+│   │   ├── schemas/           # Pydantic request/response schemas
+│   │   ├── routers/           # FastAPI routers (auth, packages, credits, features)
+│   │   ├── services/          # Business logic layer
+│   │   └── middleware/
+│   │       └── feature_guard.py  # require_feature(slug) dependency
+│   ├── alembic/               # Migrations + seed
+│   ├── tests/                 # Async integration tests (pytest-asyncio)
+│   ├── requirements.txt
+│   └── Dockerfile
+│
+├── frontend/
+│   ├── src/
+│   │   ├── api/               # Axios wrappers (authApi, packagesApi, creditsApi, adminApi)
+│   │   ├── components/        # AppLayout, AuthShell, ProtectedRoute, shadcn/ui primitives
+│   │   ├── pages/             # LoginPage, RegisterPage, PricingPage, DashboardPage,
+│   │   │                      #   TransactionsPage, AdminPage, HomePage
+│   │   ├── store/             # Zustand stores (authStore, creditsStore)
+│   │   └── types/             # Shared TypeScript interfaces
+│   ├── nginx.conf             # SPA routing + /api reverse proxy
+│   └── Dockerfile
+│
+├── docker-compose.yml         # Production stack
+├── docker-compose.override.yml # Dev overrides (hot reload volumes)
+└── .env.example
+```
+
+---
+
+## Environment Variables
+
+```env
+# Root .env (consumed by Docker Compose)
+POSTGRES_USER=credflow
+POSTGRES_PASSWORD=credflow_secret
+POSTGRES_DB=credflow_db
+JWT_SECRET=change-me-in-production
+
+# backend/.env (local dev)
+DATABASE_URL=postgresql+asyncpg://credflow:credflow_secret@localhost:5432/credflow_db
+JWT_SECRET=change-me-in-production
+JWT_ALGORITHM=HS256
+JWT_EXPIRE_HOURS=24
+APP_ENV=development
+CORS_ORIGINS=http://localhost:3000
+
+# frontend/.env (local dev)
+VITE_API_URL=http://localhost:8000/api
+```
+
+---
+
+## License
+
+MIT

@@ -171,7 +171,7 @@
 ## Stage 12 — Frontend: Admin Panel
 
 - [x] Route `/admin` — guard chỉ admin role
-- [ ] Trang quản lý packages:
+- [x] Trang quản lý packages:
   - [x] Table danh sách packages với status toggle
   - [x] Button "Tạo mới" → Dialog form (tên, mô tả, giá, credits, chọn features)
   - [x] Button "Sửa" mỗi row → Dialog form pre-filled
@@ -185,7 +185,7 @@
 - [x] `backend/Dockerfile` — multi-stage: builder + runtime (python:3.11-slim)
 - [x] `frontend/Dockerfile` — build static với node:20-alpine + serve với nginx:alpine
 - [x] `frontend/nginx.conf` — config cho React SPA (try_files $uri /index.html)
-- [ ] `docker-compose.yml` hoàn chỉnh:
+- [x] `docker-compose.yml` hoàn chỉnh:
   - [x] `postgres` với healthcheck + volume
   - [x] `backend` với depends_on postgres (condition: healthy) + run migrations on start
   - [x] `frontend` với depends_on backend
@@ -197,7 +197,7 @@
 ## Stage 14 — Documentation & Final Polish
 
 - [x] Viết `README.md` đầy đủ:
-  - [ ] Giới thiệu + screenshot UI
+  - [x] Giới thiệu + screenshot UI
   - [x] Tech stack
   - [x] Hướng dẫn chạy với Docker (3 lệnh)
   - [x] Hướng dẫn chạy local dev (backend + frontend riêng)
