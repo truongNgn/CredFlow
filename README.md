@@ -89,12 +89,16 @@ cp .env.example .env
 # 2 — Build and start all services (postgres + backend + frontend)
 docker compose up --build
 
-# 3 — Open in browser
+# 3 — Open Docker-served frontend in browser
 open http://localhost:3000        # macOS / Linux
 start http://localhost:3000       # Windows
 ```
 
 The backend auto-runs `alembic upgrade head` and seeds demo data on first start.
+
+When using Docker Compose, the frontend is published on `http://localhost:3000`.
+The Vite dev-server URL `http://localhost:5173` is only used when running the
+frontend locally with `npm run dev` outside Docker.
 
 **Production-mode** (no volume mounts, no hot reload):
 
@@ -144,6 +148,9 @@ npm run dev
 ```
 
 App available at `http://localhost:5173`
+
+This URL is for local frontend development only. If the app is running through
+Docker Compose, use `http://localhost:3000` instead.
 
 ---
 
