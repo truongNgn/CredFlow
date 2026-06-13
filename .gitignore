@@ -52,3 +52,10 @@ temp/
 *.sqlite3
 *.db
 TEST ASSIGNEMENT.pdf
+
+# Agent
+AGENT.md  
+BRAIN_SKILL.md 
+BRAIN.md
+developer_log.md
+implement_plan.md  
